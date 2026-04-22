@@ -40,7 +40,7 @@ class PipelineRunner:
         if limit:
             rows = rows[:limit]
         if not rows:
-            return PipelineResult([], [], [], [])
+            return PipelineResult([], [], [], [], [])
 
         org_col = self._detect_column(rows[0], org_column, first_column_as_org)
 
@@ -52,6 +52,7 @@ class PipelineRunner:
         unique_orgs = list(normalized_map.values())
         enriched = []
         candidates_debug = []
+        source_trace: List[Dict[str, object]] = []
 
         for idx, org in enumerate(unique_orgs, start=1):
             self.logger.info("Processing [%d/%d]: %s", idx, len(unique_orgs), org.raw)
@@ -59,6 +60,7 @@ class PipelineRunner:
                 progress_callback(idx, len(unique_orgs), org.raw)
 
             candidates = self.builder.build(org)
+            source_trace.extend(self.builder.consume_source_trace())
             _best, _status, ranked = self.resolver.resolve(candidates)
 
             pubmed_by_candidate: Dict[int, PubmedValidation] = {}
@@ -104,7 +106,7 @@ class PipelineRunner:
             if x.final_status == "manual_review_needed"
             or x.final_confidence < self.config.manual_review_confidence_threshold
         ]
-        return PipelineResult(enriched, original_plus, manual, candidates_debug)
+        return PipelineResult(enriched, original_plus, manual, candidates_debug, source_trace)
 
     @staticmethod
     def _read_input(input_path: Path) -> List[Dict[str, str]]:
