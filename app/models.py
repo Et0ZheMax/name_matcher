@@ -67,3 +67,4 @@ class PipelineResult:
     original_rows_enriched: List[Dict[str, Any]]
     manual_review: List[ResolvedOrganization]
     candidates_debug: List[Candidate]
+    source_trace: List[Dict[str, Any]] = field(default_factory=list)

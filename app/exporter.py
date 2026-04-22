@@ -68,6 +68,9 @@ def export_result(result: PipelineResult, output_path: Path) -> None:
         ],
     )
 
+    ws5 = wb.create_sheet("source_trace")
+    _write_sheet(ws5, result.source_trace)
+
     wb.save(output_path)
 
 

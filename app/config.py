@@ -13,6 +13,7 @@ class ScoringConfig:
             "ror": 25,
             "wikidata": 20,
             "wikipedia": 10,
+            "wikipedia_infobox": 35,
             "site_title_match": 20,
             "pubmed_exact_positive": 15,
             "pubmed_affiliation_similar": 20,

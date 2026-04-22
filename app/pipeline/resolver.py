@@ -25,6 +25,10 @@ class Resolver:
                 status,
                 ",".join(best.contributing_sources or [best.source]),
             )
+            if best.source == "translit_fallback":
+                self.logger.warning(
+                    "Fallback selected: transliteration used after upstream sources produced no stronger accepted candidate."
+                )
         return best, status, ranked
 
     @staticmethod
