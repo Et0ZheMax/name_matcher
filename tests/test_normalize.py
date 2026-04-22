@@ -12,3 +12,11 @@ def test_normalize_collapses_spaces() -> None:
     n = normalize_org_name("Институт   химии   СО   РАН")
     assert "  " not in n.normalized
     assert "сибирское отделение" in n.normalized
+
+
+def test_normalize_extracts_service_parts() -> None:
+    n = normalize_org_name("Филиал ФГБУН Институт катализа СО РАН им. Г.К. Борескова")
+    assert "branch" in n.service_parts
+    assert "ran_branch" in n.service_parts
+    assert "имени" not in n.core_text
+    assert n.search_text

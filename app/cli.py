@@ -43,7 +43,7 @@ def main() -> None:
     pubmed = PubMedSource(config, cache, logger)
 
     builder = CandidateBuilder(ror, official, wikidata, wikipedia, translit, logger)
-    resolver = Resolver(config)
+    resolver = Resolver(config, logger=logger)
     validator = CandidateValidator(pubmed, config)
 
     runner = PipelineRunner(config, builder, resolver, validator, logger)

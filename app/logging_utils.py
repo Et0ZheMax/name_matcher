@@ -6,15 +6,19 @@ from typing import Callable, Optional
 
 
 class CallbackHandler(logging.Handler):
-    def __init__(self, callback: Callable[[str], None]) -> None:
+    def __init__(self, callback: Callable[..., None]) -> None:
         super().__init__()
         self.callback = callback
 
     def emit(self, record: logging.LogRecord) -> None:
-        self.callback(self.format(record))
+        message = self.format(record)
+        try:
+            self.callback(record.levelname, message)
+        except TypeError:
+            self.callback(message)
 
 
-def setup_logging(logs_dir: Path, debug: bool = False, callback: Optional[Callable[[str], None]] = None) -> logging.Logger:
+def setup_logging(logs_dir: Path, debug: bool = False, callback: Optional[Callable[..., None]] = None) -> logging.Logger:
     logs_dir.mkdir(parents=True, exist_ok=True)
     logger = logging.getLogger("org_name_enricher")
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
