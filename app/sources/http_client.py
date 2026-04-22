@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import socket
 import time
 from typing import Any, Dict, Optional
 from urllib.error import HTTPError, URLError
@@ -41,6 +42,9 @@ class HttpClient:
                     continue
                 return None
             except URLError:
+                time.sleep(self.config.retry_backoff_sec * attempt)
+                continue
+            except (TimeoutError, socket.timeout):
                 time.sleep(self.config.retry_backoff_sec * attempt)
                 continue
         return None
