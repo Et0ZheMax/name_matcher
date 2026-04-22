@@ -3,15 +3,8 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
-from app.cache import JsonCache
-from app.config import mode_to_config
 from app.exporter import export_result
-from app.logging_utils import setup_logging
-from app.pipeline.candidate_builder import CandidateBuilder
-from app.pipeline.resolver import Resolver
-from app.pipeline.runner import PipelineRunner
-from app.pipeline.validator import CandidateValidator
-from app.sources import OfficialSiteSource, PubMedSource, RORSource, TranslitFallbackSource, WikidataSource, WikipediaSource
+from app.pipeline.bootstrap import build_runtime
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -30,36 +23,20 @@ def build_parser() -> argparse.ArgumentParser:
 
 def main() -> None:
     args = build_parser().parse_args()
-    config = mode_to_config(args.mode)
-
-    logger = setup_logging(config.logs_dir, debug=args.debug)
-    cache = JsonCache(config.cache_dir, ttl_hours=config.cache_ttl_hours, enabled=not args.no_cache)
-
-    ror = RORSource(config, cache, logger)
-    official = OfficialSiteSource(config, cache, logger)
-    wikidata = WikidataSource(config, cache, logger)
-    wikipedia = WikipediaSource(config, cache, logger)
-    translit = TranslitFallbackSource()
-    pubmed = PubMedSource(config, cache, logger)
-
-    builder = CandidateBuilder(ror, official, wikidata, wikipedia, translit, logger)
-    resolver = Resolver(config, logger=logger)
-    validator = CandidateValidator(pubmed, config)
-
-    runner = PipelineRunner(config, builder, resolver, validator, logger)
+    runtime = build_runtime(args.mode, no_cache=args.no_cache, debug=args.debug)
 
     # --resume prepared for future granular checkpointing; cache already helps avoid repeated network calls.
     if args.resume:
-        logger.info("Resume mode enabled: using cached source responses where available.")
+        runtime.runner.logger.info("Resume mode enabled: using cached source responses where available.")
 
-    result = runner.run(
+    result = runtime.runner.run(
         args.input_file,
         org_column=args.org_column,
         first_column_as_org=args.first_column_as_org,
         limit=args.limit,
     )
     export_result(result, args.output)
-    logger.info("Done. Output written to %s", args.output)
+    runtime.runner.logger.info("Done. Output written to %s", args.output)
 
 
 if __name__ == "__main__":

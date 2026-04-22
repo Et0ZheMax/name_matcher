@@ -66,6 +66,28 @@ app/
 python -m app.cli input.xlsx --org-column "organization" --output outputs/result.xlsx --limit 20
 ```
 
+
+## Запуск GUI
+
+GUI — это thin wrapper над существующим pipeline (`PipelineRunner`, `setup_logging(callback=...)`, конфигурации режимов). В GUI нет бизнес-логики резолвера: он только собирает параметры, запускает worker-thread и показывает прогресс/логи.
+
+```bash
+python -m app.gui
+```
+
+Flow работы в GUI:
+1. Выберите `input` файл (`xlsx/xls/csv`).
+2. Укажите `output` файл (`xlsx` или `csv`; при пустом значении создаётся `*_resolved.xlsx` рядом с input).
+3. Заполните параметры (`org column`, `first-column-as-org`, `mode`, `limit`, `no-cache`, `resume`, `debug`).
+4. Нажмите **Старт**.
+5. Следите за progress-bar, текущей организацией и live-логом.
+6. После завершения откройте результат, папку результата или папку `logs`.
+
+Ограничения GUI:
+- Tkinter UI intentionally минималистичный (внутренний production-minded инструмент).
+- GUI не заменяет CLI и использует тот же runtime/bootstrap.
+- Полноценные end-to-end UI тесты не добавлялись (покрыты только чистые helper-функции).
+
 ## Тесты
 
 ```bash
@@ -84,12 +106,8 @@ pytest -q
 - Official site crawler остаётся lightweight (без полноценного обхода сайта и JS-rendering).
 - Wikipedia/Wikidata используются как вспомогательные источники, не как источник истины.
 
-## Следующий шаг для Tkinter GUI
+## Что можно улучшить дальше в GUI
 
-Сделать thin GUI слой, который:
-- собирает параметры запуска;
-- вызывает `PipelineRunner.run(...)`;
-- отображает прогресс через `progress_callback(idx, total, org)`;
-- пишет логи в Text widget через `setup_logging(..., callback=...)`;
-- использует настраиваемый `manual_review_confidence_threshold` из config;
-- не содержит бизнес-логики резолвера.
+- Добавить кнопку отмены выполнения (cooperative cancellation в worker).
+- Добавить сохранение последних использованных путей/параметров между запусками.
+- Опционально вынести UI-тексты в отдельный ресурс для локализации.
