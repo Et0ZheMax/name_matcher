@@ -28,30 +28,45 @@ def export_result(result: PipelineResult, output_path: Path) -> None:
     _write_sheet(ws2, result.original_rows_enriched)
 
     ws3 = wb.create_sheet("manual_review")
-    _write_sheet(ws3, [
-        {
-            "organization_ru_raw": x.organization_ru_raw,
-            "organization_en_final": x.organization_en_final,
-            "final_status": x.final_status,
-            "final_confidence": x.final_confidence,
-            "notes": x.notes,
-        }
-        for x in result.manual_review
-    ])
+    _write_sheet(
+        ws3,
+        [
+            {
+                "organization_ru_raw": x.organization_ru_raw,
+                "organization_en_final": x.organization_en_final,
+                "final_status": x.final_status,
+                "final_confidence": x.final_confidence,
+                "source_primary": x.source_primary,
+                "source_secondary": x.source_secondary,
+                "pubmed_status": x.pubmed.pubmed_validation_status,
+                "pubmed_exact_count": x.pubmed.pubmed_exact_count,
+                "notes": x.notes,
+            }
+            for x in result.manual_review
+        ],
+    )
 
     ws4 = wb.create_sheet("candidates_debug")
-    _write_sheet(ws4, [
-        {
-            "organization_ru_raw": c.organization_ru_raw,
-            "organization_ru_normalized": c.organization_ru_normalized,
-            "candidate_text": c.candidate_text,
-            "source": c.source,
-            "score": c.score,
-            "confidence": c.confidence,
-            "notes": "; ".join(c.notes),
-        }
-        for c in result.candidates_debug
-    ])
+    _write_sheet(
+        ws4,
+        [
+            {
+                "organization_ru_raw": c.organization_ru_raw,
+                "organization_ru_normalized": c.organization_ru_normalized,
+                "candidate_text": c.candidate_text,
+                "normalized_candidate_text": c.normalized_candidate_text,
+                "source": c.source,
+                "contributing_sources": ", ".join(c.contributing_sources),
+                "source_url": c.source_url,
+                "support_signals": ", ".join(c.support_signals),
+                "score": c.score,
+                "confidence": c.confidence,
+                "source_evidence": " | ".join(f"{e.get('source')}: {e.get('text')}" for e in c.source_evidence),
+                "notes": "; ".join(c.notes),
+            }
+            for c in result.candidates_debug
+        ],
+    )
 
     wb.save(output_path)
 
@@ -86,6 +101,8 @@ def _org_rows(result: PipelineResult):
             "pubmed_broad_query": x.pubmed.pubmed_broad_query,
             "pubmed_broad_count": x.pubmed.pubmed_broad_count,
             "pubmed_validation_status": x.pubmed.pubmed_validation_status,
+            "pubmed_validation_notes": x.pubmed.pubmed_validation_notes,
+            "pubmed_pmids": ",".join(x.pubmed.pubmed_pmids),
             "notes": x.notes,
         }
         for x in result.organizations

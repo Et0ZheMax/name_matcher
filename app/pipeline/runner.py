@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional
 
 from app.config import AppConfig
-from app.models import PipelineResult
+from app.models import PipelineResult, PubmedValidation
 from app.pipeline.candidate_builder import CandidateBuilder
 from app.pipeline.normalize import normalize_org_name
 from app.pipeline.resolver import Resolver
@@ -57,13 +57,29 @@ class PipelineRunner:
             self.logger.info("Processing [%d/%d]: %s", idx, len(unique_orgs), org.raw)
             if progress_callback:
                 progress_callback(idx, len(unique_orgs), org.raw)
+
             candidates = self.builder.build(org)
-            best, status, ranked = self.resolver.resolve(candidates)
-            best, pub = self.validator.validate_with_pubmed(best)
+            _best, _status, ranked = self.resolver.resolve(candidates)
+
+            pubmed_by_candidate: Dict[int, PubmedValidation] = {}
+            for candidate in ranked[: min(3, len(ranked))]:
+                validated, pub = self.validator.validate_with_pubmed(candidate)
+                pubmed_by_candidate[id(validated)] = pub
+
+            best, status, ranked = self.resolver.resolve(ranked)
+            pub = pubmed_by_candidate.get(id(best), PubmedValidation())
+
             resolved = self.resolver.build_resolved(best, status)
             resolved.pubmed = pub
             enriched.append(resolved)
             candidates_debug.extend(ranked)
+            if status == "manual_review_needed" or resolved.final_confidence < self.config.manual_review_confidence_threshold:
+                self.logger.warning(
+                    "Manual review reason: status=%s confidence=%.2f candidate=%s",
+                    status,
+                    resolved.final_confidence,
+                    resolved.organization_en_final,
+                )
 
         by_norm = {x.organization_ru_normalized: x for x in enriched}
         original_plus = []
@@ -82,7 +98,12 @@ class PipelineRunner:
                 )
             original_plus.append(merged)
 
-        manual = [x for x in enriched if x.final_status == "manual_review_needed" or x.final_confidence < 0.45]
+        manual = [
+            x
+            for x in enriched
+            if x.final_status == "manual_review_needed"
+            or x.final_confidence < self.config.manual_review_confidence_threshold
+        ]
         return PipelineResult(enriched, original_plus, manual, candidates_debug)
 
     @staticmethod

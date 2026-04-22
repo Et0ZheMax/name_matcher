@@ -10,6 +10,8 @@ class NormalizedOrganization:
     normalized: str
     search_text: str
     tokens: List[str] = field(default_factory=list)
+    service_parts: List[str] = field(default_factory=list)
+    core_text: str = ""
 
 
 @dataclass(slots=True)
@@ -25,6 +27,9 @@ class Candidate:
     confidence: float = 0.0
     notes: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
+    normalized_candidate_text: str = ""
+    source_evidence: List[Dict[str, Any]] = field(default_factory=list)
+    contributing_sources: List[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -35,6 +40,7 @@ class PubmedValidation:
     pubmed_broad_count: int = 0
     pubmed_validation_status: str = "not_checked"
     pubmed_validation_notes: str = ""
+    pubmed_pmids: List[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)

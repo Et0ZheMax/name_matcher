@@ -49,6 +49,7 @@ class AppConfig:
     retry_backoff_sec: float = 1.5
     user_agent: str = "org-name-enricher/0.1 (+https://example.local)"
     mode: str = "balanced"
+    manual_review_confidence_threshold: float = 0.45
     scoring: ScoringConfig = field(default_factory=ScoringConfig)
 
 
@@ -57,7 +58,9 @@ def mode_to_config(mode: str) -> AppConfig:
     if mode == "strict":
         cfg.scoring.thresholds["official"] = 95
         cfg.scoring.thresholds["best_match"] = 70
+        cfg.manual_review_confidence_threshold = 0.55
     elif mode == "aggressive":
         cfg.scoring.thresholds["official"] = 75
         cfg.scoring.thresholds["best_match"] = 45
+        cfg.manual_review_confidence_threshold = 0.35
     return cfg
